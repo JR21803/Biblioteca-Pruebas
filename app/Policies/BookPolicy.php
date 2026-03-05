@@ -8,43 +8,43 @@ use App\Models\User;
 class BookPolicy
 {
     /**
-     * Determine whether the user can view any models.
+     * Listar libros
      */
     public function viewAny(User $user): bool
     {
-        return true;
+        return $user->hasAnyRole(['bibliotecario', 'estudiante', 'docente']);
     }
 
     /**
-     * Determine whether the user can view the model.
+     * Ver detalles de un libro
      */
     public function view(User $user, Book $book): bool
     {
-        return true;
+        return $user->hasAnyRole(['bibliotecario', 'estudiante', 'docente']);
     }
 
     /**
-     * Determine whether the user can create models.
+     * Crear un nuevo libro
      */
     public function create(User $user): bool
     {
-        return true;
+        return $user->hasRole('bibliotecario');
     }
 
     /**
-     * Determine whether the user can update the model.
+     * Actualizar un libro 
      */
     public function update(User $user, Book $book): bool
     {
-        return true;
+        return $user->hasRole('bibliotecario');
     }
 
     /**
-     * Determine whether the user can delete the model.
+     * Eliminar un libro
      */
     public function delete(User $user, Book $book): bool
     {
-        return true;
+        return $user->hasRole('bibliotecario');
     }
 
     /**
@@ -52,7 +52,7 @@ class BookPolicy
      */
     public function restore(User $user, Book $book): bool
     {
-        return true;
+        return false;
     }
 
     /**
@@ -60,6 +60,6 @@ class BookPolicy
      */
     public function forceDelete(User $user, Book $book): bool
     {
-        return true;
+        return false;
     }
 }

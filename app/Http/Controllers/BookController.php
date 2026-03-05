@@ -24,4 +24,36 @@ class BookController extends Controller
 
         return response()->json(BookResource::collection($books));
     }
+
+    public function show(Book $book)
+    {
+        $this->authorize('view', $book);
+        return response()->json(BookResource::make($book));
+    }
+
+
+    public function store(Request $request)
+    {
+        $this->authorize('create', Book::class);
+        $book = Book::create($request->all());
+
+        return response()->json(BookResource::make($book));
+    }
+
+    public function update(Request $request, Book $book)
+    {
+        $this->authorize('update', $book);
+        $book->update($request->all());
+
+        return response()->json(BookResource::make($book));
+    }
+
+    public function destroy(Book $book)
+    {
+        $this->authorize('delete', $book);
+        $book->delete();
+
+        return response()->json(['message' => 'El libro ha sido eliminado correctamente']);
+    }
+
 }
