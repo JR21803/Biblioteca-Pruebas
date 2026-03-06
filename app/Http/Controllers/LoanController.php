@@ -11,34 +11,41 @@ use Illuminate\Http\Request;
 class LoanController extends Controller
 {
     /**
-     * Display a listing of the resource.
+     * Listar préstamos activos
      */
     public function index()
     {
         $this->authorize('viewAny', Loan::class);
-    
+
         $loans = Loan::with('book')->paginate();
 
         return response()->json(LoanResource::collection($loans));
     }
 
     /**
-     * Store a newly created resource in storage.
+     * Crear préstamo
      */
     public function store(StoreLoanRequest $request)
     {
-
         $this->authorize('create', Loan::class);
 
         $book = Book::find($request->input('book_id'));
 
-        if (! $book->is_available || $book->available_copies === 0) {
-            return response()->json(['message' => 'Book is not available'], 422);
+        if (!$book) {
+            return response()->json([
+                'message' => 'Book not found'
+            ], 404);
+        }
+
+        if (!$book->is_available || $book->available_copies === 0) {
+            return response()->json([
+                'message' => 'Book is not available'
+            ], 422);
         }
 
         $loan = Loan::create([
             'requester_name' => $request->input('requester_name'),
-            'book_id' => $request->input('book_id'),
+            'book_id' => $book->id,
         ]);
 
         $book->update([
@@ -46,34 +53,38 @@ class LoanController extends Controller
             'is_available' => $book->available_copies - 1 > 0,
         ]);
 
-        return response()->json($loan, 201);
-
+        return response()->json([
+            'message' => 'Loan created successfully',
+            'data' => new LoanResource($loan->load('book'))
+        ], 201);
     }
 
     /**
-     * Display the specified resource.
+     * Ver préstamo específico
      */
     public function show(Loan $loan)
     {
         $this->authorize('view', $loan);
-        
-        return response()->json(new LoanResource($loan->load('book')));
 
+        return response()->json(
+            new LoanResource($loan->load('book'))
+        );
     }
 
     /**
-     * Update the specified resource in storage.
+     * Historial de préstamos
      */
-    public function update(Request $request, string $id)
+    public function history(Request $request)
     {
-        //
-    }
+        $this->authorize('viewAny', Loan::class);
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        //
+        $loans = Loan::with('book')
+            ->when($request->has('user_id'), function ($query) use ($request) {
+                $query->where('requester_name', $request->input('user_id'));
+            })
+            ->latest()
+            ->paginate();
+
+        return response()->json(LoanResource::collection($loans));
     }
 }

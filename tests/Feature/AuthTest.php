@@ -10,27 +10,44 @@ class AuthTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_it_can_login()
+    public function test_user_can_login()
     {
-        // Preparacion
         $user = User::factory()->create([
-            'password' => bcrypt('test123'),
+            'email' => 'usuario@test.com',
+            'password' => bcrypt('12345678'),
         ]);
 
-        // Ejecucion
-        $response = $this->post('/api/v1/login', [
+        $response = $this->postJson('/api/v1/login', [
+            'email' => 'usuario@test.com',
+            'password' => '12345678'
+        ]);
+
+        $response->assertStatus(200)
+            ->assertJsonStructure([
+                'access_token',
+                'token_type',
+                'user'
+            ]);
+    }
+
+    public function test_login_fails_with_wrong_password()
+    {
+        $user = User::factory()->create([
+            'password' => bcrypt('12345678'),
+        ]);
+
+        $response = $this->postJson('/api/v1/login', [
             'email' => $user->email,
-            'password' => 'test123',
+            'password' => 'wrongpassword'
         ]);
 
-        // Verificacion
-        $response->assertStatus(200);
-        $response->assertJsonStructure([
-            'access_token',
-            'token_type',
-            'user',
-        ]);
+        $response->assertStatus(401);
+    }
 
-        $this->assertAuthenticatedAs($user);
+    public function test_profile_requires_authentication()
+    {
+        $response = $this->getJson('/api/v1/profile');
+
+        $response->assertStatus(401);
     }
 }

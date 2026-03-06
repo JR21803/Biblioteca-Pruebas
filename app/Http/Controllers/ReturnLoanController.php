@@ -15,16 +15,30 @@ class ReturnLoanController extends Controller
     {
         $this->authorize('update', $loan);
 
-        if (! is_null($loan->return_at)) {
-            return response()->json(['message' => 'Loan already returned'], 422);
+        if (!$loan->book) {
+            return response()->json([
+                'message' => 'Book not found for this loan'
+            ], 404);
         }
 
-        $loan->update(['return_at' => now()]);
-        $loan->book()->update([
-            'available_copies' => $loan->book->available_copies + 1,
-            'is_available' => true,
+        if (!is_null($loan->return_at)) {
+            return response()->json([
+                'message' => 'Loan already returned'
+            ], 422);
+        }
+
+        $loan->update([
+            'return_at' => now()
         ]);
 
-        return response()->json(LoanResource::make($loan));
+        $loan->book()->update([
+            'available_copies' => $loan->book->available_copies + 1,
+            'is_available' => true
+        ]);
+
+        return response()->json([
+            'message' => 'Book returned successfully',
+            'data' => new LoanResource($loan->load('book'))
+        ]);
     }
 }
