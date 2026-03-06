@@ -46,6 +46,23 @@ class LibroTest extends TestCase
         $response->assertStatus(200);
     }
 
+        public function test_ebibliotecario_can_delete_book()
+    {
+        Role::create(['name' => 'bibliotecario']);
+
+        $user = User::factory()->create();
+        $user->assignRole('bibliotecario');
+
+        $book = Book::factory()->create([
+            'author' => 'Autor prueba'
+        ]);
+
+        $response = $this->actingAs($user, 'sanctum')
+            ->deleteJson('/api/v1/books/' . $book->id);
+
+        $response->assertStatus(200);
+    }
+
     public function test_estudiante_cannot_delete_book()
     {
         Role::create(['name' => 'estudiante']);

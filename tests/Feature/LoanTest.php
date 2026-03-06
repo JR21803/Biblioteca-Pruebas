@@ -79,4 +79,86 @@ class LoanTest extends TestCase
 
     $response->assertStatus(200);
 }
-}
+
+
+    public function test_it_cannot_loan_unavailable_books(): void
+    {
+         Role::create(['name' => 'estudiante']);
+
+        $user = User::factory()->create();
+        $user->assignRole('estudiante');
+
+        $book = Book::factory()->create([
+            'available_copies' => 0,
+            'is_available' => false
+        ]);
+
+        $response = $this->actingAs($user, 'sanctum')
+            ->postJson('/api/v1/loans', [
+                'requester_name' => 'Juan',
+                'book_id' => $book->id
+            ]);
+
+        $response->assertStatus(422);
+ 
+
+    }
+
+    public function test_it_cannot_loan_inexistent_books(): void
+    {
+        Role::create(['name' => 'bibliotecario']);
+
+        $user = User::factory()->create();
+        $user->assignRole('bibliotecario');
+
+
+        $loan = Loan::factory()->create([
+            'book_id' => 999999,
+            'requester_name' => 'Pedro',
+            'return_at' => null
+        ]);
+
+        $response = $this->actingAs($user, 'sanctum')
+            ->postJson('/api/v1/loans/'.$loan->id.'/return');
+
+        $response->assertStatus(404);
+ 
+
+    }
+
+
+
+    public function test_it_cannot_return_loan_twice(): void
+    {
+        Role::create(['name' => 'bibliotecario']);
+
+        $user = User::factory()->create();
+        $user->assignRole('bibliotecario');
+
+        $book = Book::factory()->create([
+            'available_copies' => 0,
+            'is_available' => false
+        ]);
+
+        $loan = Loan::factory()->create([
+            'book_id' => $book->id,
+            'requester_name' => 'Pedro',
+            'return_at' => now()
+        ]);
+
+        $response = $this->actingAs($user, 'sanctum')
+            ->postJson('/api/v1/loans/'.$loan->id.'/return');
+
+        $response->assertStatus(422);
+    }
+
+    public function test_it_cannot_return_inexistent_loan(): void
+    {
+        $response = $this->post("api/vi/loans/9999/return");
+
+        $response->assertStatus(404);
+    }
+
+
+
+};

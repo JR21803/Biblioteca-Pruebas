@@ -44,6 +44,21 @@ class AuthTest extends TestCase
         $response->assertStatus(401);
     }
 
+        public function test_login_fails_with_wrong_email()
+    {
+        $user = User::factory()->create([
+            'email' => 'usuario@test.com',
+            'password' => bcrypt('12345678'),
+        ]);
+
+        $response = $this->postJson('/api/v1/login', [
+            'email' => 'wrong@email.com',
+            'password' => '12345678'
+        ]);
+
+        $response->assertStatus(401);
+    }
+
     public function test_profile_requires_authentication()
     {
         $response = $this->getJson('/api/v1/profile');
